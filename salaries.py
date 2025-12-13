@@ -1,77 +1,79 @@
-from tabula import read_pdf
-import pandas as pd
-import numpy as np
+from pathlib import Path
+
 import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+sns.set_theme(style="whitegrid")
+
+DATA_DIR = Path("data")
+FIGURES_DIR = Path("figures")
+PDF_PATH = DATA_DIR / "usnh_salary_book_2018.pdf"
+EXTRACTED_CSV = DATA_DIR / "usnh_salary_book_2018_extracted.csv"
+JOB_TITLE_FIG = FIGURES_DIR / "usnh_job_title_distribution.png"
+PROFESSOR_SALARY_FIG = FIGURES_DIR / "usnh_top_professor_salaries.png"
 
 
-def extract_data():
-    data_columns = ['Campus',
-                    'Name',
-                    'Job Title',
-                    'FTE',
-                    'Annual Base Pay']
-    df_read = read_pdf('data/usnh_salary_book_2018.pdf',
-                       pages='all',
-                       pandas_options={'header': None})
+def extract_data() -> pd.DataFrame:
+    """Extract the PDF into CSV. Requires Java and tabula-py."""
+    from tabula import read_pdf  # Imported lazily; only needed when refreshing from PDF.
 
-    df_read.columns = data_columns
-
-    print('Data dimension:', df_read.shape)
-    df_read.to_csv('data/usnh_salary_book_2018_extracted.csv', index=False)
-    return df_read
+    columns = ["Campus", "Name", "Job Title", "FTE", "Annual Base Pay"]
+    df = read_pdf(
+        PDF_PATH,
+        pages="all",
+        pandas_options={"header": None},
+    )
+    df.columns = columns
+    df.to_csv(EXTRACTED_CSV, index=False)
+    return df
 
 
-def salaries_individuals(roster):
-    roster_joined = '|'.join(roster).lower()
-    salaries = df.loc[df['Name'].str.lower().str.contains(roster_joined)].sort_values(by='Annual Base Pay',
-                                                                                      ascending=False)
-    print(salaries)
-    return salaries
+def load_salaries(from_pdf: bool = False) -> pd.DataFrame:
+    df = extract_data() if from_pdf else pd.read_csv(EXTRACTED_CSV)
+    df["Annual Base Pay"] = (
+        df["Annual Base Pay"].astype(str).str.replace(r"[^0-9.]", "", regex=True).astype(float)
+    )
+    return df
 
 
-# df = extract_data()
-df = pd.read_csv('data/usnh_salary_book_2018_extracted.csv')
-df.info()
-df['Annual Base Pay'] = df['Annual Base Pay'].apply(lambda x: x.lstrip('$').replace(',', ''))
-df['Annual Base Pay'] = df['Annual Base Pay'].astype(float)
+def plot_job_titles(df: pd.DataFrame) -> Path:
+    counts = df["Job Title"].value_counts().head(10).sort_values()
 
-df.groupby(by='Job Title').count().sort_values(['Campus'], ascending=False)
-plt.figure()
-df.groupby(by='Job Title').count()['Campus'].plot(kind='pie')
-plt.show()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    counts.plot(kind="barh", ax=ax, color="#4C72B0")
+    ax.set_title("Top 10 Job Titles by Count (USNH 2018)")
+    ax.set_xlabel("Number of employees")
+    ax.set_ylabel("Job title")
+    fig.tight_layout()
+    fig.savefig(JOB_TITLE_FIG, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return JOB_TITLE_FIG
 
-max_salary = df['Annual Base Pay'].max()
-max_salary_idx = df['Annual Base Pay'].idxmax()
-print(df.iloc[max_salary_idx])
 
-salaries_sorted = df.sort_values(by=['Annual Base Pay'], ascending=False)
-highest_salaries = salaries_sorted.iloc[0:20]
-lowest_salaries = salaries_sorted.iloc[-20:]
-print('Highest salaries:')
-print(highest_salaries)
-print('Lowest salaries:')
-print(lowest_salaries)
+def plot_professor_salaries(df: pd.DataFrame) -> Path:
+    prof_df = df[df["Job Title"].str.contains("professor", case=False, na=False)]
+    top_prof = prof_df.nlargest(15, "Annual Base Pay").sort_values("Annual Base Pay")
 
-df['Annual Base Pay'].mean()
-df['Annual Base Pay'].mode()
-df['Annual Base Pay'].median()
+    fig, ax = plt.subplots(figsize=(10, 8))
+    sns.barplot(data=top_prof, x="Annual Base Pay", y="Name", ax=ax)
+    ax.set_title("Top 15 Professor Salaries (USNH 2018)")
+    ax.set_xlabel("Annual base pay (USD)")
+    ax.set_ylabel("Name")
+    fig.tight_layout()
+    fig.savefig(PROFESSOR_SALARY_FIG, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return PROFESSOR_SALARY_FIG
 
-prof_salaries = df.loc[df['Job Title'].str.lower().str.contains('professor')].sort_values(by='Annual Base Pay',
-                                                                                          ascending=False)
-prof_top10 = prof_salaries.iloc[0:10].reset_index()
-prof_least10 = prof_salaries.iloc[-10:].reset_index()
 
-# -------------------- Individuals
-cs_names = ['Hatcher', 'Ruml',
-            'Bartos', 'Petrik', 'Varki', 'Charpentier',
-            'Dietz', 'Begum', 'Xu, Dongpeng' 'Weiner, James', 'Valcourt, Scott',
-            'Narayan', 'Magnusson', 'Hausner', 'Graf, Ken', 'Gildersleeve',
-            'Coleman, Betsy', 'Bochert', 'Plumlee', 'Lemon',
-            'Kibler', 'Kitterman', 'Desmarais']
-cs_salaries = salaries_individuals(cs_names)
+def main(show: bool = False, refresh_from_pdf: bool = False) -> None:
+    FIGURES_DIR.mkdir(exist_ok=True)
+    df = load_salaries(from_pdf=refresh_from_pdf)
+    plot_job_titles(df)
+    plot_professor_salaries(df)
+    if show:
+        plt.show()
 
-oiss_names = ['Webber, Elizabeth', 'Chiarantona']
-oiss_salaries = salaries_individuals(oiss_names)
 
-temp_names = ['Lyon, Mark', 'Macmanes']
-temp_salaries = salaries_individuals(temp_names)
+if __name__ == "__main__":
+    main()

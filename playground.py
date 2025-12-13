@@ -1,84 +1,58 @@
-import numpy as np
-import pandas as pd
+from pathlib import Path
+
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
-
 from sklearn import linear_model as lm
-from sklearn.metrics import mean_squared_error
 
-df = sns.load_dataset('iris')
-df.head()
+sns.set_theme(style="whitegrid")
 
-s1 = pd.Series(range(3), index=range(3))
-
-df.tail()
-
-df.apply(np.cumsum, axis=0)
-
-df.columns
-
-df.sepal_length.plot()
-plt.show()
-
-df.mean().max().round(0)
-df.std().idxmax()
+FIGURES_DIR = Path("figures")
+IRIS_RELATIONSHIP_FIG = FIGURES_DIR / "iris_relationships.png"
 
 
-df.sepal_length.median()
-df.loc[((df['sepal_length'] > 5) & (df['sepal_length'] < 5.999)), 'sepal_width'].median()
+def load_iris() -> pd.DataFrame:
+    return sns.load_dataset("iris")
 
 
+def fit_regression(df: pd.DataFrame) -> lm.LinearRegression:
+    """Fit a simple model predicting sepal width from petal length."""
+    model = lm.LinearRegression()
+    X = df[["petal_length"]]
+    y = df["sepal_width"]
+    model.fit(X, y)
+    return model
 
 
-model = lm.LinearRegression()
-idxx = list(df.index)
-xx = np.array(idxx).reshape(-1,1)
-xx = df['petal_length'].values.reshape(-1,1)
-df.columns
-yy = df[['sepal_width', 'sepal_length']].values.reshape(-1,2)
-xx.shape
-yy.shape
+def plot_iris(df: pd.DataFrame, model: lm.LinearRegression) -> Path:
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
-c = 0
-model.fit(yy , xx)
-model.coef_
-model.predict(np.array([2,3]).reshape(-1,2))
-pred= model.predict(np.array([1]).reshape(-1,1))
-c += np.abs(model.coef_)
+    # Relationship: petal length vs sepal width with regression line
+    sns.regplot(data=df, x="petal_length", y="sepal_width", ax=axes[0], line_kws={"color": "orange"})
+    axes[0].set_title("Sepal Width vs Petal Length")
+    axes[0].set_xlabel("Petal length (cm)")
+    axes[0].set_ylabel("Sepal width (cm)")
 
-np.abs(c)
-int(np.round(c))
-model.n
-mean_squared_error(yy,pred)
+    # Distribution of petal length by species
+    sns.boxplot(data=df, x="species", y="petal_length", ax=axes[1])
+    axes[1].set_title("Petal Length by Species")
+    axes[1].set_xlabel("Species")
+    axes[1].set_ylabel("Petal length (cm)")
 
-
-str(int(np.array([1])))
-
-x = [1, 2, 6, 3, 8, 0.5]
-y = [0.5, 7, 99, 1.4, 4.7, 6.4]
-
-x = [-2, -1, 0 , 1, 2]
-y = [0, 10, 15, 0, 5, -0.3]
-
-d = dict()
-for i in range(len(x)):
-    d[x[i]] = y[i]
-
-inp = -0.3
-l = list(sorted(d.keys()))[0]
-h = list(sorted(d.keys()))[-1]
-for k in sorted(d.keys()):
-    if k < inp and k > l:
-        l = k
-    if k  > inp and k < h:
-        h = k
-print(l, h)
+    fig.tight_layout()
+    fig.savefig(IRIS_RELATIONSHIP_FIG, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return IRIS_RELATIONSHIP_FIG
 
 
-list(d.keys())[0]
+def main(show: bool = False) -> None:
+    FIGURES_DIR.mkdir(exist_ok=True)
+    df = load_iris()
+    model = fit_regression(df)
+    plot_iris(df, model)
+    if show:
+        plt.show()
 
 
-((15 - 10) / (0 - -1) * (-0.3 - 1) + 10)
-mse()
-
-
+if __name__ == "__main__":
+    main()

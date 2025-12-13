@@ -10,6 +10,8 @@ FIGURES_DIR = Path("figures")
 PERCENT_FIGURE = FIGURES_DIR / "us_phd_percent_population.png"
 MALE_TOTAL_FIGURE = FIGURES_DIR / "us_phd_male_degrees.png"
 
+sns.set_theme(style="whitegrid")
+
 
 def load_population() -> pd.DataFrame:
     population = pd.read_csv(DATA_DIR / "us_population.csv", dtype={"year": int, "population": int})
@@ -43,34 +45,39 @@ def plot_population_share(df: pd.DataFrame) -> Path:
     fig, ax = plt.subplots(figsize=(16, 8))
     ax.plot(df["period"], df["percent_pop_male"], label="Male")
     ax.plot(df["period"], df["percent_pop_female"], label="Female")
-    ax.set_xlabel("period")
+    ax.set_title("US PhD Degrees as Share of Population")
+    ax.set_xlabel("Period")
     ax.set_ylabel("Percent of population awarded PhDs")
     ax.legend()
     ax.grid(True)
     fig.autofmt_xdate(rotation=45, ha="right")
     fig.tight_layout()
     fig.savefig(PERCENT_FIGURE, dpi=200, bbox_inches="tight")
+    plt.close(fig)
     return PERCENT_FIGURE
 
 
 def plot_male_totals(df: pd.DataFrame) -> Path:
     fig, ax = plt.subplots(figsize=(16, 8))
     sns.lineplot(data=df, x="period", y="male", ax=ax)
-    ax.set_xlabel("period")
-    ax.set_ylabel("male")
+    ax.set_title("US PhD Degrees Awarded to Males")
+    ax.set_xlabel("Period")
+    ax.set_ylabel("Male degrees")
     ax.grid(True)
     fig.autofmt_xdate(rotation=45, ha="right")
     fig.tight_layout()
     fig.savefig(MALE_TOTAL_FIGURE, dpi=200, bbox_inches="tight")
+    plt.close(fig)
     return MALE_TOTAL_FIGURE
 
 
-def main() -> None:
+def main(show: bool = False) -> None:
     FIGURES_DIR.mkdir(exist_ok=True)
     dataset = build_dataset()
     plot_population_share(dataset)
     plot_male_totals(dataset)
-    plt.show()
+    if show:
+        plt.show()
 
 
 if __name__ == "__main__":
