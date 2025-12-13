@@ -6,8 +6,9 @@ import seaborn as sns
 
 sns.set_theme(style="whitegrid")
 
-DATA_DIR = Path("data")
-FIGURES_DIR = Path("figures")
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
+FIGURES_DIR = BASE_DIR / "figures"
 PDF_PATH = DATA_DIR / "usnh_salary_book_2018.pdf"
 EXTRACTED_CSV = DATA_DIR / "usnh_salary_book_2018_extracted.csv"
 JOB_TITLE_FIG = FIGURES_DIR / "usnh_job_title_distribution.png"

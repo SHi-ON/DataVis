@@ -5,8 +5,9 @@ import pandas as pd
 import seaborn as sns
 
 
-DATA_DIR = Path("data")
-FIGURES_DIR = Path("figures")
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
+FIGURES_DIR = BASE_DIR / "figures"
 PERCENT_FIGURE = FIGURES_DIR / "us_phd_percent_population.png"
 MALE_TOTAL_FIGURE = FIGURES_DIR / "us_phd_male_degrees.png"
 

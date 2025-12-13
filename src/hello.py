@@ -6,8 +6,9 @@ import seaborn as sns
 
 sns.set_theme(style="whitegrid")
 
-DATA_DIR = Path("data")
-FIGURES_DIR = Path("figures")
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
+FIGURES_DIR = BASE_DIR / "figures"
 FIFA_FIGURE = FIGURES_DIR / "fifa_time_series.png"
 
 
@@ -39,4 +40,3 @@ def main(show: bool = False) -> None:
 
 if __name__ == "__main__":
     main()
-

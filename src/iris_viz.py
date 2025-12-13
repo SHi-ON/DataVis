@@ -7,7 +7,8 @@ from sklearn import linear_model as lm
 
 sns.set_theme(style="whitegrid")
 
-FIGURES_DIR = Path("figures")
+BASE_DIR = Path(__file__).resolve().parent.parent
+FIGURES_DIR = BASE_DIR / "figures"
 IRIS_RELATIONSHIP_FIG = FIGURES_DIR / "iris_relationships.png"
 
 
